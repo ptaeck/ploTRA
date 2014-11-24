@@ -254,7 +254,7 @@ def makeFigure(name, path, var, png, pdf):
     plt.xlabel('$\Delta l$ [mm]')
     plt.ylabel('$F$ [kN]')
     dim = plotdim.split()
-    dim = [int(pd) for pd in dim]
+    dim = [float(pd) for pd in dim]
     plt.axis(dim)
 
 #     plt.axis([0, 20, 0, 30]) #plot axis xmin xmax ymin ymax
