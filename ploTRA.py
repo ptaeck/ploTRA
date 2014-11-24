@@ -1036,7 +1036,7 @@ if __name__ == '__main__':
         print_dict_tree(expdic,0)
         sys.stdout = saveout
         
-        dump_data(expdat)
+        dump_data(expdic)
  
               
 
