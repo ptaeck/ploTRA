@@ -22,15 +22,36 @@ import numpy as np
 
 
 #==================================================================
-# S E T T I N G S                                               3.2
+# S E T T I N G S
 #==================================================================
    
-""" Default folder. """
-
-traPath = 'C:/Users/ptaeck/PY/exp/cykly-tah-sorted-nov/0'
+""" Defaults. """
+gui         = 0                      # if gui == 0: (all files for analysis are taken from experiment_info.py) and settings below is applied
+                                   
+traPath = 'C:/Users/ptaeck/PY/exp/cykly-tah-sorted-nov/TRA'                # TRA lookout folder 
 
 
 """ Experiment analysis settings. """
+cyclic      = 1                      # cyclic experiment ? if cyclic == 0: expecting TRA files for simple tensile test
+maketscurve = 1                      # calculate envelope curve for cyclic tensile test ?
+angles      = 1                      # print angles in graph ?  (hardoff now)
+
+wantpng     = 1
+wantpdf     = 1
+
+
+interav     = 0                      # average simple tensile experiment in interval defined by                  ? 
+loadtscurve = 0                      # load curve from simple tensile test to cyclic experiment graph ? \
+statistics  = 0                      # print csv table with statistical data ?
+
+
+expGroups   = 7                      #groups of specimens (angles)
+expCount    = 3                      #experiment count for one group of specimens
+
+precision   = '10'                   #takes each nth point for averaging, if cyclic: precision = 1 !
+
+
+
 
 dde = 1                              # displacement driven cyclic experiment
 edp = [2, 0.2, 0.5]                  # cyclic experiment displacement prescription - unloading  (disp, increment below, increment above)
@@ -38,17 +59,19 @@ edp = [2, 0.2, 0.5]                  # cyclic experiment displacement prescripti
 
 """ Default values for plot. """
 
-rcParams['font.family'] = 'serif'
-rcParams['font.sans-serif'] = 'Times'
-rcParams['font.size'] = 9
-rcParams['figure.figsize'] = 5,4
+plotdim =  '0 10 0 7'                # XY plot bounds (xmin xmax ymin ymax)
+
 tlw = 2                              # target line width
 elw = 0.8                            # experiment line width
-
 
 ppd = 1                              # plot point data (intersections, locMaxs)      1 = True, 0 = False
 pce = 1                              # plot color experiment
 pas = 1                              # plot averaged slopes
+
+rcParams['font.family'] = 'serif'
+rcParams['font.sans-serif'] = 'Times'
+rcParams['font.size'] = 9
+rcParams['figure.figsize'] = 5,4
 
 #==================================================================
 # F U N C T I O N S  (22)   
@@ -153,6 +176,7 @@ def getTraData( filename ):
         for row in reader:                        #for i in kn -> i holds the value, not index
             for col in row.keys():
                 coldata = row[col]
+                
                 results.setdefault( col, []).append( coldata )
         
         rnm = ['Sila [N]','Deformace nominalni [mm]','Deformace [mm]','Cas [s]']
@@ -611,34 +635,43 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
 # """ Here ends the slope averaging. """
 
        TS_D = averageLists(risingD, expC, 0)
-       TS_F = averageLists(risingF, expC, 0)
-
+       TS_F = averageLists(risingF, expC, 0)                      
+                                                         
+       TS_D = [ddd/1000 for ddd in TS_D]                 # converting mm to m
+       tar_slopes_k = [kk[2] for kk in tar_slopes]       # list with slopes only
        
 
 #        if dde: aSlopesDu = dde_conversion(aSlopesD)          # if displacement driven cyclic experiment - known unload points
                                                                
        if dde: unloadPointsD_exp = dde_conversion(aSlopesD, edp)    # saving only upper slope point x value and correcting to edp                                                  
+       if dde: unloadPointsD_exp = [ddd/1000 for ddd in unloadPointsD_exp]
 #        if dde: saveData( unloadPointsD_exp, cG, "unloadPoint_exp.csv")       
 #        if dde: saveData( aSlopesD, cG, "unloadPoint_exp.csv")
 
-       tecdict['TENSILE'] = {'displacement': TS_D,'force': TS_F}
-       strdict['STRENGTH'] =  {'displacement': TS_D[-1],'strength': TS_F[-1]} # strenghth target ex TC
+       tecdict['tensile'] = {'displacement': TS_D,'force': TS_F}
+       strdict['strength'] =  {'displacement': TS_D[-1],'strength': TS_F[-1]} # strenghth target ex TC
 #        tandict['TANGENT'] = {'displacement': aSlopesD,'force': aSlopesF, 'slope': tar_slopes}
-       tandict['TANGENT'] = {'displacement': unloadPointsD_exp, 'tangent': tar_slopes} 
-       tardict['TARGET'] = tandict
-       tardict['TARGET'].update(strdict)
-       tardict['TARGET'].update(tecdict)
+       tandict['tangent'] = {'displacement': unloadPointsD_exp, 'tangent': tar_slopes_k} 
+       tardict['target'] = tandict
+       tardict['target'].update(strdict)
+       tardict['target'].update(tecdict)
 #        print(tardict)
        
        
 #        expdat[dstep+cG*dstep] = tardict                      #first 0deg and last 90deg experiments are not cyclic
-       expdat[cG*dstep] = tardict                      #first 0deg and last 90deg experiments are cyclic
+       expdat[str(cG*dstep)] = tardict                      #first 0deg and last 90deg experiments are cyclic
 
-       for i in range(1,expC+1):                             # saving raw TRA data
+       for i in range(1,expC+1):                            # saving raw TRA data
+       
+           vars()['trD'+str(i)] = [ddd/1000 for ddd in vars()['trD'+str(i)]]       # converting mm to m
+           vars()['riD'+str(i)] = [ddd/1000 for ddd in vars()['riD'+str(i)]]          
+#            print(vars()['loD'+str(i)])
+           vars()['loD'+str(i)] = [ddd[0]/1000 for ddd in vars()['loD'+str(i)]]
+                       
            tradict[fileList[i-1]]= {'displacement': vars()['trD'+str(i)][0::precis] , 'force': vars()['trF'+str(i)][0::precis], 'force_top': vars()['riF'+str(i)] , 'displacement_top': vars()['riD'+str(i)], 'force_bottom': vars()['loF'+str(i)] , 'displacement_bottom': vars()['loD'+str(i)]}                                      #   , 'force_failure': , 'displacement_failure': 
            
 #            expdat[dstep+cG*dstep].update(tradict)
-           expdat[cG*dstep].update(tradict)       
+           expdat[str(cG*dstep)].update(tradict)       
        
 #        easyPlot([TS_D[-1]], [TS_F[-1]/1000], cG+1, 'rx')     #plots strength point of aproximated TC (top point of last avg. slope)
 
@@ -908,6 +941,8 @@ class MyDialog(tkSimpleDialog.Dialog):
         global wantpng
         global wantpdf
         global tslope
+
+# pumping data out of gui 
         
         expGroups = int(self.e1.get())                    #groups of specimens (angles)
         expCount = int(self.e2.get())                     #experiment count for one group of specimens
@@ -984,8 +1019,11 @@ if __name__ == '__main__':
             sys.exit(1)
 
    
-    root.title("ploTra settings:")
-    d = MyDialog(root)                                                          #triggers dialog for data input
+    if gui:
+        root.title("ploTra settings:")
+        d = MyDialog(root)                                                          #triggers dialog for data input
+
+        
          
     if expGroups*expCount ==  len(fileList):                                 #simple file check
         print("*TRA match!*")
