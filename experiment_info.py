@@ -1,11 +1,11 @@
 from numpy import *
 
 # vyberte verzi s merenymi orientacemi vlaken popr. vytvorte svou vlastni
-set_of_specimens_version = 2
-set_of_specimens_list =  {'1':array([0,10,20,30,40,50,60,70,80,90]),
-                          '2':array([0,15,30,45,60,75,90]),
-                          '3':array([0,45,90]),
-                          '4':array([0])
+set_of_specimens_version = 1
+set_of_specimens_list =  {'1':array(['0','10','20','30','40','50','60','70','80','90']),
+                          '2':array(['0','15','30','45','60','75','90']),
+                          '3':array(['0','45','90']),
+                          '4':array(['0'])
                         }
 d                      = dict()
 # d['set_of_specimens']  = dict()
@@ -45,7 +45,7 @@ d['date_of_measuring'] = {'0':'1.1.2014',
                         '90':'1.1.2014'
                         }
                         
-# upravte jmena u orientaci, ktere se tykaji Vaseho mereni   
+# upravte jmena u orientaci, ktere se tykaji Vaseho mereni
 d['name_of_tester']   = dict()
 d['name_of_tester']   = {'0':'Xxx Yyy',
                         '10':'Xxx Yyy',
@@ -60,7 +60,7 @@ d['name_of_tester']   = {'0':'Xxx Yyy',
                         '75':'Xxx Yyy',
                         '80':'Xxx Yyy',
                         '90':'Xxx Yyy'
-                        }      
+                        }
                         
 # upravte teplotu [C] u orientaci, ktere se tykaji Vaseho mereni
 d['temperature']      = dict()
@@ -79,89 +79,89 @@ d['temperature']      = {'0': 23,
                         '90': 23
                         }
 
-# upravte delku mezi celistmi [mm] u orientaci, ktere se tykaji Vaseho mereni                        
+# upravte delku mezi celistmi [m] u orientaci, ktere se tykaji Vaseho mereni                        
 d['grip_length']      = dict()
-d['grip_length']      = {'0': 100,
-                        '10': 100,
-                        '15': 100,
-                        '20': 100,
-                        '30': 100,
-                        '40': 100,
-                        '45': 100,
-                        '50': 100,
-                        '60': 100,
-                        '70': 100,
-                        '75': 100,
-                        '80': 100,
-                        '90': 100
+d['grip_length']      = {'0': 0.100,
+                        '10': 0.100,
+                        '15': 0.100,
+                        '20': 0.100,
+                        '30': 0.100,
+                        '40': 0.100,
+                        '45': 0.100,
+                        '50': 0.100,
+                        '60': 0.100,
+                        '70': 0.100,
+                        '75': 0.100,
+                        '80': 0.100,
+                        '90': 0.100
                         }
                         
-# upravte delku merenou extenzometrem [mm] u orientaci, ktere se tykaji Vaseho mereni
+# upravte delku merenou extenzometrem [m] u orientaci, ktere se tykaji Vaseho mereni
 d['ext_length']       = dict()
-d['ext_length']       = {'0': 60,
-                        '10': 60,
-                        '15': 60,
-                        '20': 60,
-                        '30': 60,
-                        '40': 60,
-                        '45': 60,
-                        '50': 60,
-                        '60': 60,
-                        '70': 60,
-                        '75': 60,
-                        '80': 60,
-                        '90': 60
+d['ext_length']       = {'0': 0.060,
+                        '10': 0.060,
+                        '15': 0.060,
+                        '20': 0.060,
+                        '30': 0.060,
+                        '40': 0.060,
+                        '45': 0.060,
+                        '50': 0.060,
+                        '60': 0.060,
+                        '70': 0.060,
+                        '75': 0.060,
+                        '80': 0.060,
+                        '90': 0.060
                         }
                         
-# upravte celkovou delku vzorku [mm] u orientaci, ktere se tykaji Vaseho mereni
+# upravte celkovou delku vzorku [m] u orientaci, ktere se tykaji Vaseho mereni
 d['total_length']     = dict()
-d['total_length']     = {'0': 150,
-                        '10': 150,
-                        '15': 150,
-                        '20': 150,
-                        '30': 150,
-                        '40': 150,
-                        '45': 150,
-                        '50': 150,
-                        '60': 150,
-                        '70': 150,
-                        '75': 150,
-                        '80': 150,
-                        '90': 150
+d['total_length']     = {'0': 0.150,
+                        '10': 0.150,
+                        '15': 0.150,
+                        '20': 0.150,
+                        '30': 0.150,
+                        '40': 0.150,
+                        '45': 0.150,
+                        '50': 0.150,
+                        '60': 0.150,
+                        '70': 0.150,
+                        '75': 0.150,
+                        '80': 0.150,
+                        '90': 0.150
                         }
                         
-# upravte tloustku vzorku [mm] u orientaci, ktere se tykaji Vaseho mereni
+# upravte tloustku vzorku [m] u orientaci, ktere se tykaji Vaseho mereni
 d['thickness']        = dict()
-d['thickness']        = {'0': 1,
-                        '10': 1,
-                        '15': 1,
-                        '20': 1,
-                        '30': 1,
-                        '40': 1,
-                        '45': 1,
-                        '50': 1,
-                        '60': 1,
-                        '70': 1,
-                        '75': 1,
-                        '80': 1,
-                        '90': 1
+d['thickness']        = {'0': 0.001,
+                        '10': 0.001,
+                        '15': 0.001,
+                        '20': 0.001,
+                        '30': 0.001,
+                        '40': 0.001,
+                        '45': 0.001,
+                        '50': 0.001,
+                        '60': 0.001,
+                        '70': 0.001,
+                        '75': 0.001,
+                        '80': 0.001,
+                        '90': 0.001
                         }
                         
-# upravte sirku vzorku [mm] u orientaci, ktere se tykaji Vaseho mereni
+# upravte sirku vzorku [m] u orientaci, ktere se tykaji Vaseho mereni
 d['width']            = dict()
-d['width']            = {'0': 10,
-                        '10': 10,
-                        '15': 10,
-                        '20': 10,
-                        '30': 10,
-                        '40': 10,
-                        '45': 10,
-                        '50': 10,
-                        '60': 10,
-                        '70': 10,
-                        '75': 10,
-                        '80': 10,
-                        '90': 10
+d['width']            = {'0': 0.010,
+                        '10': 0.010,
+                        '15': 0.010,
+                        '20': 0.010,
+                        '30': 0.010,
+                        '40': 0.010,
+                        '45': 0.010,
+                        '50': 0.010,
+                        '60': 0.010,
+                        '70': 0.010,
+                        '75': 0.010,
+                        '80': 0.010,
+                        '90': 0.010
                         }
                         
 # upravte mereny material u orientaci, ktere se tykaji Vaseho mereni
