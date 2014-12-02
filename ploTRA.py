@@ -28,29 +28,27 @@ import numpy as np
 """ Defaults. """
 gui         = 0                      # if gui == 0: (all files for analysis are taken from experiment_info.py) and settings below is applied
                                    
-traPath = 'C:/Users/ptaeck/PY/exp/cykly-tah-sorted-nov/TRA'                # TRA lookout folder 
+traPath = 'C:/Users/ptaeck/PY/exp/cykly-tah-sorted-nov/TRA'                # default TRA lookout folder 
 
 
 """ Experiment analysis settings. """
-cyclic      = 1                      # cyclic experiment ? if cyclic == 0: expecting TRA files for simple tensile test
-maketscurve = 1                      # calculate envelope curve for cyclic tensile test ?
+cyclic      = 0                      # cyclic experiment ? if cyclic == 0: expecting TRA files for simple tensile test
+maketscurve = 1                      # calculate envelope curve for cyclic tensile test / average tensile curve for tensile test ?
 angles      = 1                      # print angles in graph ?  (hardoff now)
 
 wantpng     = 1
 wantpdf     = 1
 
 
-interav     = 0                      # average simple tensile experiment in interval defined by                  ? 
+interav     = 0                      # average simple tensile experiment in interval defined by precision ? 
 loadtscurve = 0                      # load curve from simple tensile test to cyclic experiment graph ? \
 statistics  = 0                      # print csv table with statistical data ?
 
 
-expGroups   = 7                      #groups of specimens (angles)
+expGroups   = 1                      #groups of specimens (angles)
 expCount    = 3                      #experiment count for one group of specimens
 
 precision   = '10'                   #takes each nth point for averaging, if cyclic: precision = 1 !
-
-
 
 
 dde = 1                              # displacement driven cyclic experiment
@@ -59,14 +57,16 @@ edp = [2, 0.2, 0.5]                  # cyclic experiment displacement prescripti
 
 """ Default values for plot. """
 
-plotdim =  '0 10 0 7'                # XY plot bounds (xmin xmax ymin ymax)
+plotdim =  '0 15 0 7'                # XY plot bounds (xmin xmax ymin ymax)
 
 tlw = 2                              # target line width
 elw = 0.8                            # experiment line width
 
-ppd = 1                              # plot point data (intersections, locMaxs)      1 = True, 0 = False
+ppd = 0                              # plot point data (intersections, locMaxs)      1 = True, 0 = False
 pce = 1                              # plot color experiment
-pas = 1                              # plot averaged slopes
+out = 0                              # plot targets with outline
+
+pas = 0                              # plot averaged slopes
 
 rcParams['font.family'] = 'serif'
 rcParams['font.sans-serif'] = 'Times'
@@ -167,7 +167,7 @@ def getTraData( filename ):
     """ Imports TRA (CSV) data to dict of lists. """
     
     with open(filename, 'rb') as n:
-        d = csv.Sniffer().sniff(n.readline(), [' ',';'])    #sniffs correct delimeter from suggestions in []
+        d = csv.Sniffer().sniff(n.readline(), [' ',';','; '])    #sniffs correct delimeter from suggestions in []
         n.seek(0)
         reader = csv.DictReader(n, dialect=d)
     
@@ -235,19 +235,23 @@ def plot1TraData( eps, sila ):
 def plot2ATraData( eps, sila, n ,color):
     """ Plots averaged curve using MatPlotLib. """
     t = 1000
-    sila = map(float, sila)    #str to float
+#     sila = map(float, sila)    #str to float
     sila = [x/t for x in sila]
+    eps = [e*t for e in eps]     #plot in mm
     plt.figure(1)
     
 #     plt.text(eps[-1], sila[-1], str(angle)+"$^\circ$", color='r', fontsize=8)
     
     if len(color) > 2:
         col = (0.0,0.0,0.0)
-        plt.plot(eps, sila, color=col, lw=tlw, ms=1) 
+        if out: plt.plot(eps, sila, color=col, lw=tlw, ms=1)   # black outline
         plt.plot(eps, sila, 'r-', lw=tlw-0.6, ms=1)
                         
     else:
-        plt.plot(eps, sila, color, lw=1, ms=1) 
+        col = (0.0,0.0,0.0)
+        if out: plt.plot(eps, sila, color=col, lw=tlw, ms=1)   # black outline
+        plt.plot(eps, sila, color, lw=tlw-0.6, ms=1)
+#         plt.plot(eps, sila, color, lw=1, ms=1) 
         
     col = color[0]
     if angles == 0:
@@ -422,7 +426,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
                   TtraF = vars()['trF'+str(a)][TtraD[0]] #gets adequate force - y-value at same position in TRA as deformation
 #                   print TtraF
                   sumF += TtraF                                      
-              TnD = sumD/expC
+              TnD = (sumD/expC)/1000                 #displacement in meters!
               TnF = sumF/expC
               TargetD.append(TnD)
               TargetF.append(TnF)
@@ -437,15 +441,18 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
       strdict = getStrPoint(TargetD, TargetF, 0)
       maxindex = getStrPoint(TargetD, TargetF, 1)   
                   
-      tendict['TENSILE'] = {'displacement': TargetD[0:maxindex+1],'force': TargetF[0:maxindex+1]}  #saving averaged curves till max
-      tardict['TARGET'] = tendict
-      tardict['TARGET'].update(strdict)
+      tendict['tensile'] = {'displacement': TargetD[0:maxindex+1],'force': TargetF[0:maxindex+1]}  #saving averaged curves till max
+      tardict['target'] = tendict
+      tardict['target'].update(strdict)
       
 #       print(tardict)
       
       expdat[cG*dstep] = tardict
       
       for i in range(1,expC+1):
+      
+         vars()['trD'+str(i)] = [ddd/1000 for ddd in vars()['trD'+str(i)]]       # converting mm to m
+         
          tradict[fileList[i-1]]= {'displacement': vars()['trD'+str(i)][0::precis] , 'force': vars()['trF'+str(i)][0::precis]}
          expdat[cG*dstep].update(tradict)
 
@@ -453,7 +460,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
 
 #       print('expdat= ', expdat)
 #       plot11TraData( TargetDint, TargetFint, col)
-      plot2ATraData( TargetD, TargetF, cG, 'g-' )
+      if maketscurve: plot2ATraData( TargetD, TargetF, cG, 'g-' )      # plots averaged tensile curve
 #       print(tar_data)
       
 
@@ -578,8 +585,11 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
 #             saveData( [lowD, lowF], cG, 'lodata'+str(i)+'.csv')
             csc = len(Target_sD)             # slope count in current TRA
 
-          
-          slope_counts.append(csc)           # slope counts in TRAs of current expGroup
+          try:
+              slope_counts.append(csc)           # slope counts in TRAs of current expGroup
+          except UnboundLocalError:
+              print('*No loop found - TRA files for cyclic experiment used?*')
+              sys.exit(1) 
 #           print(slope_counts)
 #           if slope_count >= csc:
 #               slope_count = csc
@@ -675,7 +685,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
        
 #        easyPlot([TS_D[-1]], [TS_F[-1]/1000], cG+1, 'rx')     #plots strength point of aproximated TC (top point of last avg. slope)
 
-    if maketscurve == 1:                                     #if requested plots approximated TS curve (0.0,0.44,0.75)
+    if cyclic and maketscurve:                                     #if requested plots approximated TS curve (0.0,0.44,0.75)
           plot2ATraData (TS_D, TS_F, cG+1, (0.0,0.44,0.75))               
 #           plot3Poly (TS_D, TS_F, 3)                        #making interpolation does not have sense!
     
