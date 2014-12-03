@@ -32,8 +32,9 @@ traPath = 'C:/Users/ptaeck/PY/exp/cykly-tah-sorted-nov/TRA'                # def
 
 
 """ Experiment analysis settings. """
-cyclic      = 0                      # cyclic experiment ? if cyclic == 0: expecting TRA files for simple tensile test
+cyclic      = 1                      # cyclic experiment ? if cyclic == 0: expecting TRA files for simple tensile test
 maketscurve = 1                      # calculate envelope curve for cyclic tensile test / average tensile curve for tensile test ?
+pas         = 1                      # plot averaged slopes 
 angles      = 1                      # print angles in graph ?  (hardoff now)
 
 wantpng     = 1
@@ -45,7 +46,7 @@ loadtscurve = 0                      # load curve from simple tensile test to cy
 statistics  = 0                      # print csv table with statistical data ?
 
 
-expGroups   = 1                      #groups of specimens (angles)
+expGroups   = 7                      #groups of specimens (angles)
 expCount    = 3                      #experiment count for one group of specimens
 
 precision   = '10'                   #takes each nth point for averaging, if cyclic: precision = 1 !
@@ -57,16 +58,16 @@ edp = [2, 0.2, 0.5]                  # cyclic experiment displacement prescripti
 
 """ Default values for plot. """
 
-plotdim =  '0 15 0 7'                # XY plot bounds (xmin xmax ymin ymax)
+plotdim =  '0 10 0 7'                # XY plot bounds (xmin xmax ymin ymax)
 
 tlw = 2                              # target line width
 elw = 0.8                            # experiment line width
 
 ppd = 0                              # plot point data (intersections, locMaxs)      1 = True, 0 = False
 pce = 1                              # plot color experiment
-out = 0                              # plot targets with outline
+out = 1                              # plot targets with outline
 
-pas = 0                              # plot averaged slopes
+
 
 rcParams['font.family'] = 'serif'
 rcParams['font.sans-serif'] = 'Times'
@@ -138,7 +139,7 @@ def read_info():
     vektor_informaci                = e_i.d.keys()
     vektor_informaci.remove('set_of_specimens') 
     
-    print(len(vektor_informaci), vektor_informaci)
+#     print(len(vektor_informaci), vektor_informaci)
             
     for iname in vektor_informaci:
         e_c['info'][iname] = {}
@@ -235,9 +236,9 @@ def plot1TraData( eps, sila ):
 def plot2ATraData( eps, sila, n ,color):
     """ Plots averaged curve using MatPlotLib. """
     t = 1000
-#     sila = map(float, sila)    #str to float
+
     sila = [x/t for x in sila]
-    eps = [e*t for e in eps]     #plot in mm
+    eps  = [e*t for e in eps]     #plot in mm
     plt.figure(1)
     
 #     plt.text(eps[-1], sila[-1], str(angle)+"$^\circ$", color='r', fontsize=8)
@@ -245,7 +246,7 @@ def plot2ATraData( eps, sila, n ,color):
     if len(color) > 2:
         col = (0.0,0.0,0.0)
         if out: plt.plot(eps, sila, color=col, lw=tlw, ms=1)   # black outline
-        plt.plot(eps, sila, 'r-', lw=tlw-0.6, ms=1)
+        plt.plot(eps, sila, color, lw=tlw-0.6, ms=1)
                         
     else:
         col = (0.0,0.0,0.0)
@@ -301,7 +302,7 @@ def getStrPoint(eps, sila, num):
     fwidth = 12.7080                                             # highly dependent on precision! recommended. prec = 10 
     count = 0 
     index, value = max(enumerate(sila), key=operator.itemgetter(1))    # gets id and val of global maximum
-    dict['STRENGTH'] = {'displacement': eps[index],'force': value}
+    dict['strength'] = {'displacement': eps[index],'force': value}
 #     easyPlot([eps[index]],[value/1000], '', 'rx')
 #     print(eps,sila)
 #     try:                                                 
@@ -335,10 +336,10 @@ def dde_conversion(lop, edp):
     
         
     
-          
-def makeAverage(dataDict, fileList, expG, expC, cG, precision):
-    """ Calculates lists of x,y for averaged curve (TS) or slope (TC). This is huge. Should be splitted or classified!"""  
-    avgfln = 'CSV file'
+def averageCyclic(dataDict, fileList, expG, expC, cG):
+    """ Calculates lists of x,y for averaged envelope curve and slopes for TRA with cyclic experiment data.""" 
+    avgfln = 'averaged_k.csv'
+    precis = 1
     
     tradict = {}                                     # dicts for expdat pickle.dump (saves filtered TRA data)
     tardict = {}                                                 
@@ -347,12 +348,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
     tecdict = {}                                     # TS envelope curve ex TC 
     tandict = {}
     
-    if interav ==1:                                  # accepts values < 1 for interval averaging
-      precis = 1
-    elif cyclic ==1:                                 # required for counting slopes!!! 
-      precis = 1
-    else:
-      precis = int(precision)
+    #preparing data
 
     for i in range(1,expC+1):
         vars()['trD'+str(i)] = dataDict[fileList[i-1]]['Deformace']
@@ -369,107 +365,12 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
         del vars()['trD'+str(i)][:vars()['cnD'+str(i)][0]]                      #cuts off the trD list
         del vars()['trF'+str(i)][:vars()['cnD'+str(i)][0]]
         
-    vars()['trD1'] = vars()['trD1'][0::precis]       #takes every nth value for comparsion                                         
-    vars()['trF1'] = vars()['trF1'][0::precis]   
-
 
         #first TRA in group is master TRA trD1 
         #(takes closest values from other experiments to value in first TRA in experiment group)                                             
         #for choosing another master TRA just swap first TRA file or here swap trD1 with another trDi
- 
 
-    if cyclic == 0:                                              #TS averaging begins !
-      TargetD = []
-      TargetF = []
-#       TargetDint = []
-#       TargetFint = []
-      kD = []                                                    #slope for TS
-      kF = []
-      
-#       if interav == 1:   precis = 1                              #TS interval averaging  
-      if interav == 1:  
-        avgfln = 'averaged_int.csv'
-        pdim = plotdim.split()
-        pdim = [int(pd) for pd in pdim]
-        eps_range = pdim[1]
-        prec = float(precision)
-        chunkks = int(eps_range/prec)
-        cInt = [een*prec for een in range(chunkks)] 
-        print('*Using averaging TS per interval size ',str(prec),'*!')
-
-        for n, vallue in enumerate(cInt):                         # TS interval averaging begins 
-              closestD = min(enumerate(vars()['trD1']), key=lambda x:abs(x[1]-vallue))
-              sumDi = closestD[1]
-              sumFi = vars()['trF1'][closestD[0]]
-              for a in range(2,expC+1):
-                  TtraDi = min(enumerate(vars()['trD'+str(a)]), key=lambda x:abs(x[1]-vallue))
-#                   print TtraDi
-                  sumDi += TtraDi[1]
-                  TtraFi = vars()['trF'+str(a)][TtraDi[0]] #gets adequate force - y-value at same position in TRA as dl
-#                   print TtraFi
-                  sumFi += TtraFi                                      
-              TnDi = sumDi/expC
-              TnFi = sumFi/expC
-              TargetD.append(TnDi)
-              TargetF.append(TnFi)      
-      
-      else:                                                        #TS 2D averaging (default)
-        avgfln = 'averaged.csv'
-        for n, value in enumerate(vars()['trD1']):                 #trD1 master for comparing values !
-              sumD = value
-              sumF = vars()['trF1'][n]
-#               print sum                                                                         
-              for a in range(2,expC+1):
-                  TtraD = min(enumerate(vars()['trD'+str(a)]), key=lambda x:abs(x[1]-value))
-#                   print TtraD
-                  sumD += TtraD[1]
-                  TtraF = vars()['trF'+str(a)][TtraD[0]] #gets adequate force - y-value at same position in TRA as deformation
-#                   print TtraF
-                  sumF += TtraF                                      
-              TnD = (sumD/expC)/1000                 #displacement in meters!
-              TnF = sumF/expC
-              TargetD.append(TnD)
-              TargetF.append(TnF)
-
-
-
-    
-      tar_data = [TargetD, TargetF]
-      saveData( tar_data, cG, avgfln)            #saving averaged curves to csv as a dict
-      
-      
-      strdict = getStrPoint(TargetD, TargetF, 0)
-      maxindex = getStrPoint(TargetD, TargetF, 1)   
-                  
-      tendict['tensile'] = {'displacement': TargetD[0:maxindex+1],'force': TargetF[0:maxindex+1]}  #saving averaged curves till max
-      tardict['target'] = tendict
-      tardict['target'].update(strdict)
-      
-#       print(tardict)
-      
-      expdat[cG*dstep] = tardict
-      
-      for i in range(1,expC+1):
-      
-         vars()['trD'+str(i)] = [ddd/1000 for ddd in vars()['trD'+str(i)]]       # converting mm to m
-         
-         tradict[fileList[i-1]]= {'displacement': vars()['trD'+str(i)][0::precis] , 'force': vars()['trF'+str(i)][0::precis]}
-         expdat[cG*dstep].update(tradict)
-
-      
-
-#       print('expdat= ', expdat)
-#       plot11TraData( TargetDint, TargetFint, col)
-      if maketscurve: plot2ATraData( TargetD, TargetF, cG, 'g-' )      # plots averaged tensile curve
-#       print(tar_data)
-      
-
-    
-            
-
-                                                #TC averaging begins !
-
-    if cyclic == 1:                                     
+    if cyclic:                                     
 
        x_point_data = []
        Target_sD = []
@@ -479,7 +380,8 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
        slope_counts = []
        lowerFbound2 = 10     # for finding the lowest point of the loop
        inf_gap = 0           # minimum gap between two infexion points, do it in LCHK!
-       for i in range(1,expC+1): 
+       if pas: 
+        for i in range(1,expC+1): 
           points = locMax(vars()['trD'+str(i)], vars()['trF'+str(i)], inf_gap )     #  gets locMax points (loops)
            
 #           print ("trDi_inflex (risingD)")
@@ -572,6 +474,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
             else:
                 x_point = [[i_point[0][0],l_point[0][0]],[i_point[0][1]/t,l_point[1][0]/t]]
                 if ppd: plotPointData(x_point[0],[i_point[0][1],l_point[1][0]], 'rx')        # plots intersections and lopoints
+                
 # """ Here begins the slope averaging. """
             Target_sD.append(x_point[0])        
             Target_sF.append(x_point[1])            
@@ -600,7 +503,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
 #           print vars()['sF'+str(i)]
        aSlopesD = []
        aSlopesF = []
-
+       
        for b in range(min(slope_counts)):
           avg_sD = []
           avg_sF = []
@@ -619,10 +522,10 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
           sila = np.array(asF)
     
           plt.figure(1)
-#           plt.plot( eps, sila,'b-')       
-          if pas: plt.plot(eps, sila, color=(0.0,0.0,0.0), lw=tlw, ms=1)
-          if pas: plt.plot(eps, sila, 'r-', lw=tlw-0.6, ms=1)                          # plots the slope  (0.0,0.44,0.75)
-#           plt.plot(eps, sila, color=(0.0,0.44,0.75), lw=2, ms=1)                     #x,z,linestyle, linewidth, markersize
+#           if pas: plot2ATraData(eps, sila, b, 'r-')    
+          if pas and out: plt.plot(eps, sila, color=(0.0,0.0,0.0), lw=tlw, ms=1)
+          if pas: plt.plot(eps, sila, 'r-', lw=tlw-0.6, ms=1)                          # plots averaged slope  (0.0,0.44,0.75)
+
 #        print 'asD'
 #        print aSlopesD
 #        print 'asF' 
@@ -639,7 +542,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
            a1 = (defo[1],forc[1])
            tar_slopes.append((a1, a0, slope))
 
-       saveData( tar_slopes, cG, "averaged_k.csv")       # save averaged k   0
+       saveData( tar_slopes, cG, avgfln)       # save averaged k   0
        
       
 # """ Here ends the slope averaging. """
@@ -662,7 +565,7 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
        strdict['strength'] =  {'displacement': TS_D[-1],'strength': TS_F[-1]} # strenghth target ex TC
 #        tandict['TANGENT'] = {'displacement': aSlopesD,'force': aSlopesF, 'slope': tar_slopes}
        tandict['tangent'] = {'displacement': unloadPointsD_exp, 'tangent': tar_slopes_k} 
-       tardict['target'] = tandict
+       tardict['target'] = tandict       
        tardict['target'].update(strdict)
        tardict['target'].update(tecdict)
 #        print(tardict)
@@ -686,11 +589,130 @@ def makeAverage(dataDict, fileList, expG, expC, cG, precision):
 #        easyPlot([TS_D[-1]], [TS_F[-1]/1000], cG+1, 'rx')     #plots strength point of aproximated TC (top point of last avg. slope)
 
     if cyclic and maketscurve:                                     #if requested plots approximated TS curve (0.0,0.44,0.75)
-          plot2ATraData (TS_D, TS_F, cG+1, (0.0,0.44,0.75))               
+          plot2ATraData (TS_D, TS_F, cG+1, 'g-')
 #           plot3Poly (TS_D, TS_F, 3)                        #making interpolation does not have sense!
     
     return avgfln
+    
+def averageTensile(dataDict, fileList, expG, expC, cG, precision):
+    """ Calculates lists of x,y for averaged tensile curve for TRA with simple tensile experiment data.""" 
+    
+    tradict = {}                                     # dicts for expdat pickle.dump (saves filtered TRA data)
+    tardict = {} 
+    strdict = {}                                                
+    tendict = {}
 
+    
+    if interav ==1:                                  # accepts values < 1 for interval averaging
+      precis = 1
+    else:
+      precis = int(precision)
+
+    for i in range(1,expC+1):
+        vars()['trD'+str(i)] = dataDict[fileList[i-1]]['Deformace']
+        vars()['trD'+str(i)] =  map(float, vars()['trD'+str(i)])                #converts list to float
+        vars()['trF'+str(i)] = dataDict[fileList[i-1]]['Standardn\xed sn\xedma\xe8 F']
+        vars()['trF'+str(i)] =  map(float, vars()['trF'+str(i)])                #converts list to float
+#         print "TRA_"+str(i)+":"
+#         print vars()['tra'+str(i)]
+       
+    for i in range(1,expC+1):                                                   #cuts off the trF list
+        vars()['cnD'+str(i)] = min(enumerate(vars()['trD'+str(i)]), key=lambda x:abs(x[1]-rand))   
+        #gets closest value and its position for cutoff from trD list
+        
+        del vars()['trD'+str(i)][:vars()['cnD'+str(i)][0]]                      #cuts off the trD list
+        del vars()['trF'+str(i)][:vars()['cnD'+str(i)][0]]
+        
+    vars()['trD1'] = vars()['trD1'][0::precis]       #takes every nth value for comparsion                                         
+    vars()['trF1'] = vars()['trF1'][0::precis]   
+
+
+        #first TRA in group is master TRA trD1 
+        #(takes closest values from other experiments to value in first TRA in experiment group)                                             
+        #for choosing another master TRA just swap first TRA file or here swap trD1 with another trDi
+    
+    if not cyclic:                                              #TS averaging begins !
+      TargetD = []
+      TargetF = []
+#       TargetDint = []
+#       TargetFint = []
+      kD = []                                                    #slope for TS
+      kF = []
+      
+#       if interav == 1:   precis = 1                              #TS interval averaging  
+      if interav == 1:  
+        avgfln = 'averaged_int.csv'
+        pdim = plotdim.split()
+        pdim = [int(pd) for pd in pdim]
+        eps_range = pdim[1]
+        prec = float(precision)
+        chunkks = int(eps_range/prec)
+        cInt = [een*prec for een in range(chunkks)] 
+        print('*Using averaging TS per interval size ',str(prec),'*!')
+
+        for n, vallue in enumerate(cInt):                         # TS interval averaging begins 
+              closestD = min(enumerate(vars()['trD1']), key=lambda x:abs(x[1]-vallue))
+              sumDi = closestD[1]
+              sumFi = vars()['trF1'][closestD[0]]
+              for a in range(2,expC+1):
+                  TtraDi = min(enumerate(vars()['trD'+str(a)]), key=lambda x:abs(x[1]-vallue))
+#                   print TtraDi
+                  sumDi += TtraDi[1]
+                  TtraFi = vars()['trF'+str(a)][TtraDi[0]] #gets adequate force - y-value at same position in TRA as dl
+#                   print TtraFi
+                  sumFi += TtraFi                                      
+              TnDi = sumDi/expC
+              TnFi = sumFi/expC
+              TargetD.append(TnDi)
+              TargetF.append(TnFi)      
+      
+      else:                                                        #TS 2D averaging (default)
+        avgfln = 'averaged.csv'
+        for n, value in enumerate(vars()['trD1']):                 #trD1 master for comparing values !
+              sumD = value
+              sumF = vars()['trF1'][n]
+#               print sum                                                                         
+              for a in range(2,expC+1):
+                  TtraD = min(enumerate(vars()['trD'+str(a)]), key=lambda x:abs(x[1]-value))
+#                   print TtraD
+                  sumD += TtraD[1]
+                  TtraF = vars()['trF'+str(a)][TtraD[0]] #gets adequate force - y-value at same position in TRA as deformation
+#                   print TtraF
+                  sumF += TtraF                                      
+              TnD = (sumD/expC)/1000                               #displacement in meters!
+              TnF = sumF/expC
+              TargetD.append(TnD)
+              TargetF.append(TnF)
+
+
+
+    
+      tar_data = [TargetD, TargetF]
+      saveData( tar_data, cG, avgfln)                              #saving averaged curves to csv as a dict
+      
+      
+      strdict = getStrPoint(TargetD, TargetF, 0)
+      maxindex = getStrPoint(TargetD, TargetF, 1)   
+                  
+      tendict['tensile'] = {'displacement': TargetD[0:maxindex+1],'force': TargetF[0:maxindex+1]}  #saving averaged curves till max
+      tardict['target'] = tendict
+      tardict['target'].update(strdict)
+      
+#       print(tardict)
+      
+      expdat[cG*dstep] = tardict
+      
+      for i in range(1,expC+1):
+      
+         vars()['trD'+str(i)] = [ddd/1000 for ddd in vars()['trD'+str(i)]]   # converting mm to m
+         
+         tradict[fileList[i-1]]= {'displacement': vars()['trD'+str(i)][0::precis] , 'force': vars()['trF'+str(i)][0::precis]}
+         expdat[cG*dstep].update(tradict)
+
+      if maketscurve: plot2ATraData( TargetD, TargetF, cG, 'g-' )            # plots averaged tensile curve
+
+      return avgfln
+      
 def func(x,a,b,c):
     return a*np.exp(-b*x)+c
     
@@ -985,6 +1007,7 @@ if __name__ == '__main__':
     import time
     import tkMessageBox
     import collections
+#     import odict
     
     rand = 0.005                                         #cutoff value                                      
     t = 1000                                             #y-divider (N to kN)
@@ -1005,8 +1028,11 @@ if __name__ == '__main__':
 
     dataDict = {}
     expdat = collections.OrderedDict()                            #dict for pickle.dump
+#     expdat = odict.OrderedDict()
     
     fileInfo = chooseDir(traPath, 0)    #dirname, filelist, path
+#     fileInfo = ['45', ['45_5.TRA','45_6.TRA','45_7.TRA'],'/server/home/kunc/documents/PY/plotra/45']
+
 #     print fileInfo[2]              #path
     fileList = fileInfo[1]           #filelist
 #     print fileList
@@ -1066,25 +1092,27 @@ if __name__ == '__main__':
               suff = '_max'
               makeStats(dataGroupDict[i], group_keys[i], expGroups, expCount, i, precision)
         print('*Data saved to averaged_max.csv !*')
-    else:    
-        for i in range(expGroups):
-              suff = '_1'         
-              avg = makeAverage(dataGroupDict[i], group_keys[i], expGroups, expCount, i ,precision)
-        print('*Data saved to ',avg,'!*')
+    
+       
+    for i in range(expGroups):
+          suff = '_1'         
+          if cyclic: avg = averageCyclic(dataGroupDict[i], group_keys[i], expGroups, expCount, i)
+          if not cyclic: avg = averageTensile(dataGroupDict[i], group_keys[i], expGroups, expCount, i, precision)
+    print('*Data saved to',avg,'!*')
         
         
-        expinf = read_info()                      # reading file experiment_info.py
+    expinf = read_info()                      # reading file experiment_info.py
 
-        expdic = {}
-        expdic['data'] = expdat                   # saving exp dat dictionary to expdic
-        expdic.update(expinf)                     # updating expdic dictionary with exp info
+    expdic = {}
+    expdic['data'] = expdat                   # saving exp dat dictionary to expdic
+    expdic.update(expinf)                     # updating expdic dictionary with exp info
 
-        saveout = sys.stdout                      # redirecting output for dict tree file exp.txt
-        sys.stdout = open('exp.txt', 'w')
-        print_dict_tree(expdic,0)
-        sys.stdout = saveout
+    saveout = sys.stdout                      # redirecting output for dict tree file exp.txt
+    sys.stdout = open('exp.txt', 'w')
+    print_dict_tree(expdic,0)
+    sys.stdout = saveout
         
-        dump_data(expdic)
+    dump_data(expdic)
  
               
 
@@ -1128,6 +1156,6 @@ if __name__ == '__main__':
              
               
     makeFigure(fileInfo[0], fileInfo[2], suff, wantpng, wantpdf)       #filename, path,  suffix, make png?
-    plt.show()
+    #~ plt.show()
     print('*ploTra fin!*')
     
