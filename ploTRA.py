@@ -302,6 +302,7 @@ def getStrPoint(eps, sila, num):
     fwidth = 12.7080                                             # highly dependent on precision! recommended. prec = 10 
     count = 0 
     index, value = max(enumerate(sila), key=operator.itemgetter(1))    # gets id and val of global maximum
+    globMax = [eps[index], value]
     dict['strength'] = {'displacement': eps[index],'force': value}
 #     easyPlot([eps[index]],[value/1000], '', 'rx')
 #     print(eps,sila)
@@ -314,7 +315,7 @@ def getStrPoint(eps, sila, num):
 #                                                                     
 #     easyPlot([eps[index+count]],[sila[index+count]/1000], 'o', 'rx')    
     if num==0: return dict
-    else: return index
+    else: return globMax
 
 def dde_conversion(lop, edp):
     """ Takes list of list of pairs and creates single list with first values of pairs only. These are corrected according 
@@ -553,6 +554,7 @@ def averageCyclic(dataDict, fileList, expG, expC, cG):
        TS_D = [ddd/1000 for ddd in TS_D]                 # converting mm to m
        tar_slopes_k = [kk[2] for kk in tar_slopes]       # list with slopes only
        
+       globMax = getStrPoint(TS_D, TS_F, 1)
 
 #        if dde: aSlopesDu = dde_conversion(aSlopesD)          # if displacement driven cyclic experiment - known unload points
                                                                
@@ -562,7 +564,10 @@ def averageCyclic(dataDict, fileList, expG, expC, cG):
 #        if dde: saveData( aSlopesD, cG, "unloadPoint_exp.csv")
 
        tecdict['tensile'] = {'displacement': TS_D,'force': TS_F}
-       strdict['strength'] =  {'displacement': TS_D[-1],'strength': TS_F[-1]} # strenghth target ex TC
+       
+       strdict['max_displacement'] =  {'displacement': TS_D[-1],'force': TS_F[-1]} # final strenghth target ex TC
+       strdict['max_force'] =  {'displacement': globMax[0],'force': globMax[1]}    # global max strenghth target ex TC
+
 #        tandict['TANGENT'] = {'displacement': aSlopesD,'force': aSlopesF, 'slope': tar_slopes}
        tandict['tangent'] = {'displacement': unloadPointsD_exp, 'tangent': tar_slopes_k} 
        tardict['target'] = tandict       
