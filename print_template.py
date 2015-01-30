@@ -66,7 +66,10 @@ for id in set_of_specimens_list[str(set_of_specimens_version)]:
 #         print  '#*** %s ***' %(tra)
         print 'd1[\'%s\'] = {' %tra
         for key in d['default']:
-            print '                 \'%s\' :\'%s\',' %(key,d['default'][key])   
+            if type(d['default'][key])==type(str()):
+                print '                 \'%s\' :\'%s\',' %(key,d['default'][key])
+            else:
+                print '                 \'%s\' :%s,' %(key,d['default'][key])  
         print '                 }'
 
     print '\nd0[\'%s\'] = d1' %id
